@@ -1,3 +1,4 @@
+import glob
 import os.path
 
 from bs4 import BeautifulSoup
@@ -45,7 +46,7 @@ def get_headlines_from_main_page(received_url):
         return False
 
 
-def news_from_headings_tri(heading_url, tag):
+def news_from_headings_tri(heading_url, news_tag):
     content_from_heading_page = CreateSoup(heading_url).get_soup()
     title = content_from_heading_page.find("h1", {"class": "title"}).text
     img_src = content_from_heading_page.find("picture").img["data-src"]
@@ -62,12 +63,15 @@ def news_from_headings_tri(heading_url, tag):
     folder_name = nkk.check_make_folder()
     file_name_with_path = os.path.join(os.getcwd(), folder_name, file_name_to_save)
 
-    # NKK : Check if file already exists
+    # NKK : Check if file already exists in any of child folder
     print(title)
-    if not os.path.exists(file_name_with_path):
+    file_found = glob.glob(os.getcwd() + "/**/"+file_name_to_save, recursive=True)
+    # print(file_found)
+    if len(file_found) == 0:
         nkk.write_to_file_and_save(file_name_with_path, main_content)
         print("File created.")
-        email.send_attach_email(title[0:60], file_name_with_path, file_name_to_save, tag, "newsdiarytoday@gmail.com")
+        email.send_attach_email(title[0:60], file_name_with_path, file_name_to_save, news_tag,
+                                "newsdiarytoday@gmail.com")
         print("Email sent.\n")
     else:
         print("File already exists.\n")
@@ -75,6 +79,7 @@ def news_from_headings_tri(heading_url, tag):
 
 if __name__ == '__main__':
     url_list = return_urls()
+    tag = ''
     for url in url_list:
         # url_tri_g_noida = "http://www.tricitytoday.com/greater-noida"
         url_index = url_list.index(url)
@@ -91,8 +96,10 @@ if __name__ == '__main__':
         elif url_index == 5:
             tag = "Uttar Pradesh"
         # Headings from TriCity online portal
-        headings_tricity = get_headlines_from_main_page(url)
-        if headings_tricity:
-            for headings in headings_tricity:
+        headings_tri_city = get_headlines_from_main_page(url)
+        if headings_tri_city:
+            for headings in headings_tri_city:
                 # further news from Headings pulled earlier
                 news_from_headings_tri(headings, tag)
+
+    input("\n\nPress any key to exit...")
