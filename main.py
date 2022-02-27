@@ -1,8 +1,11 @@
 import glob
 import os.path
+import sys
+import time
 
-from bs4 import BeautifulSoup
 import requests
+from bs4 import BeautifulSoup
+
 import nkk_tools as nkk
 import send_email as email
 
@@ -58,6 +61,8 @@ def news_from_headings_tri(heading_url, news_tag):
     # print(section.replace("/t/n", ""))
     main_content = title + "\n\n" + timestamp + "\n\n" + img_src + "\n\n" + section
 
+    receiver_email = nkk.read_email_id()
+
     # NKK : Create file with image name inside date folder with content
     file_name_to_save = str(img_src.split("/")[-1].split(".")[0]) + ".txt"
     folder_name = nkk.check_make_folder()
@@ -65,19 +70,20 @@ def news_from_headings_tri(heading_url, news_tag):
 
     # NKK : Check if file already exists in any of child folder
     print(title)
-    file_found = glob.glob(os.getcwd() + "/**/"+file_name_to_save, recursive=True)
+    file_found = glob.glob(os.getcwd() + "/**/" + file_name_to_save, recursive=True)
     # print(file_found)
+
     if len(file_found) == 0:
         nkk.write_to_file_and_save(file_name_with_path, main_content)
         print("File created.")
         email.send_attach_email(title[0:60], file_name_with_path, file_name_to_save, news_tag,
-                                "newsdiarytoday@gmail.com")
+                                receiver_email)
         print("Email sent.\n")
     else:
         print("File already exists.\n")
 
 
-if __name__ == '__main__':
+def main():
     url_list = return_urls()
     tag = ''
     for url in url_list:
@@ -101,5 +107,35 @@ if __name__ == '__main__':
             for headings in headings_tri_city:
                 # further news from Headings pulled earlier
                 news_from_headings_tri(headings, tag)
+    input("\nCheck mailbox.\nPress any key to exit...")
 
-    input("\n\nPress any key to exit...")
+
+if __name__ == '__main__':
+    # email id to send content
+    nkk.check_email_exists()
+
+    # confirm if ready to proceed
+    confirmation = str(input('Do you want to fetch news. y/N : '))
+    if confirmation == confirmation.lower() == "y":
+        main()
+    # c to change email id
+    elif confirmation == confirmation.lower() == "change_email":
+        ask_email_id = str(input("enter id : "))
+        # Change email id only if valid
+        if nkk.check_passcode():
+            if nkk.validate_email_id(ask_email_id):
+                nkk.write_email_id(ask_email_id)
+                # Confirmation again after changing email id
+                confirmation_again = str(input('Do you want to fetch news. y/N : '))
+                if confirmation_again == confirmation_again.lower() == "y":
+                    main()
+    elif confirmation == confirmation.lower() == "check_email":
+        print(nkk.read_email_id())
+        # Confirmation again after changing email id
+        confirmation_again = str(input('Do you want to fetch news. y/N : '))
+        if confirmation_again == confirmation_again.lower() == "y":
+            main()
+    else:
+        print("exiting...")
+        time.sleep(1)
+        sys.exit()

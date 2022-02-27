@@ -1,1 +1,1 @@
-"C:\Program Files (x86)\Microsoft Visual Studio\Shared\Python37_64\python.exe" -m pyinstaller --onefile "..\main.py"
+py -3.7 -m PyInstaller --icon=ndt.ico "..\main.py"
